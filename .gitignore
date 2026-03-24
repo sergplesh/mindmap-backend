@@ -1,7 +1,14 @@
 # Build output
-/bin/
-/obj/
-/publish/
+**/bin/
+**/obj/
+**/publish/
+_buildcheck/
+_testbin2/
+_testobj/
+
+# Test output
+**/TestResults/
+**/CoverageReport/
 
 # User-specific files
 *.user
@@ -13,9 +20,6 @@
 .vs/
 .vscode/
 
-# Entity Framework
-/Migrations/
-
 # Configuration files with secrets
 appsettings.Development.json
 appsettings.Production.json
@@ -24,7 +28,7 @@ appsettings.Production.json
 *.log
 logs/
 
-# Package Manager Console
+# Package manager
 package-lock.json
 
 # Windows
@@ -33,6 +37,3 @@ desktop.ini
 
 # Mac
 .DS_Store
-
-# Test results
-/TestResults/
