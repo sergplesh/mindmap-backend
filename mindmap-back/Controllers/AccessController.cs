@@ -81,9 +81,11 @@ namespace KnowledgeMap.Backend.Controllers
                 message = "Пользователь приглашён",
                 access = new
                 {
-                    user.Id,
-                    user.Username,
-                    access.Role
+                    id = access.Id,
+                    accessId = access.Id,
+                    userId = user.Id,
+                    username = user.Username,
+                    role = access.Role
                 }
             });
         }
@@ -125,6 +127,7 @@ namespace KnowledgeMap.Backend.Controllers
             var result = accesses.Select(a => new
             {
                 id = a.Id,
+                accessId = a.Id,
                 userId = a.User.Id,
                 username = a.User.Username,
                 role = a.Role

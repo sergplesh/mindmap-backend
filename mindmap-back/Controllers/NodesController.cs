@@ -136,6 +136,8 @@ namespace KnowledgeMap.Backend.Controllers
             node.Title = updateNodeDto.Title;
             node.Description = updateNodeDto.Description;
             node.RequiresQuiz = updateNodeDto.RequiresQuiz ?? node.RequiresQuiz;
+            node.XPosition = updateNodeDto.XPosition ?? node.XPosition;
+            node.YPosition = updateNodeDto.YPosition ?? node.YPosition;
             node.Width = updateNodeDto.Width ?? node.Width;
             node.Height = updateNodeDto.Height ?? node.Height;
             node.TypeId = nodeType?.Id;

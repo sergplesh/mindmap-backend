@@ -146,6 +146,10 @@ namespace mindmap_back.Migrations
                     b.Property<bool>("IsHierarchy")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Label")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<int>("SourceNodeId")
                         .HasColumnType("int");
 

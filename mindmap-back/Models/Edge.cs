@@ -25,6 +25,9 @@ namespace KnowledgeMap.Backend.Models
         [ForeignKey(nameof(TypeId))]
         public virtual EdgeType? Type { get; set; }
 
+        [MaxLength(255)]
+        public string? Label { get; set; }
+
         public bool IsHierarchy { get; set; } = true;
 
         [Required]

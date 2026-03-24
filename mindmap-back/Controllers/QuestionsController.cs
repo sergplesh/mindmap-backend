@@ -131,6 +131,7 @@ namespace KnowledgeMap.Backend.Controllers
             var userId = GetCurrentUserId();
 
             var question = await _context.Questions
+                .Include(q => q.AnswerOptions)
                 .Include(q => q.Node)
                     .ThenInclude(n => n.Map)
                 .FirstOrDefaultAsync(q => q.Id == id);
@@ -147,6 +148,67 @@ namespace KnowledgeMap.Backend.Controllers
 
             question.QuestionText = dto.QuestionText;
             question.QuestionType = dto.QuestionType;
+
+            if (dto.AnswerOptions != null)
+            {
+                var incomingOptions = dto.AnswerOptions
+                    .Where(option => !string.IsNullOrWhiteSpace(option.OptionText))
+                    .ToList();
+
+                var incomingOptionIds = incomingOptions
+                    .Where(option => option.Id.HasValue)
+                    .Select(option => option.Id!.Value)
+                    .ToHashSet();
+
+                var optionsToRemove = question.AnswerOptions
+                    .Where(option => !incomingOptionIds.Contains(option.Id))
+                    .ToList();
+
+                if (optionsToRemove.Count > 0)
+                {
+                    var optionIdsToRemove = optionsToRemove
+                        .Select(option => option.Id)
+                        .ToList();
+
+                    var hasSelections = await _context.AnswerResultSelections
+                        .AnyAsync(selection => optionIdsToRemove.Contains(selection.AnswerOptionId));
+
+                    if (hasSelections)
+                    {
+                        return BadRequest(new
+                        {
+                            message = "Нельзя удалить вариант ответа, по которому уже есть история прохождения. Измените его текст или оставьте вариант."
+                        });
+                    }
+
+                    _context.AnswerOptions.RemoveRange(optionsToRemove);
+                }
+
+                foreach (var optionDto in incomingOptions)
+                {
+                    if (optionDto.Id.HasValue)
+                    {
+                        var existingOption = question.AnswerOptions
+                            .FirstOrDefault(option => option.Id == optionDto.Id.Value);
+
+                        if (existingOption == null)
+                        {
+                            return BadRequest(new { message = "Некорректный вариант ответа." });
+                        }
+
+                        existingOption.OptionText = optionDto.OptionText.Trim();
+                        existingOption.IsCorrect = optionDto.IsCorrect;
+                        continue;
+                    }
+
+                    question.AnswerOptions.Add(new AnswerOption
+                    {
+                        QuestionId = question.Id,
+                        OptionText = optionDto.OptionText.Trim(),
+                        IsCorrect = optionDto.IsCorrect
+                    });
+                }
+            }
 
             await _context.SaveChangesAsync();
 

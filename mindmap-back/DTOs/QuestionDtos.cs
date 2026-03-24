@@ -25,6 +25,8 @@ namespace KnowledgeMap.Backend.DTOs
         [Required]
         [RegularExpression("^(single_choice|multiple_choice)$")]
         public string QuestionType { get; set; } = "single_choice";
+
+        public List<AnswerOptionDto>? AnswerOptions { get; set; }
     }
 
     public class VerifyAnswersDto

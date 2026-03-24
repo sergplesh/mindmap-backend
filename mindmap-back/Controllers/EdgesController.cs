@@ -28,7 +28,7 @@ namespace KnowledgeMap.Backend.Controllers
             var map = await _context.Maps.FindAsync(createEdgeDto.MapId);
             if (map == null)
             {
-                return NotFound(new { message = "Карта не найдена" });
+                return NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
             }
 
             if (map.OwnerId != userId)
@@ -41,12 +41,12 @@ namespace KnowledgeMap.Backend.Controllers
 
             if (sourceNode == null || targetNode == null)
             {
-                return BadRequest(new { message = "Один из узлов не существует" });
+                return BadRequest(new { message = "РћРґРёРЅ РёР· СѓР·Р»РѕРІ РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚" });
             }
 
             if (sourceNode.MapId != createEdgeDto.MapId || targetNode.MapId != createEdgeDto.MapId)
             {
-                return BadRequest(new { message = "Узлы должны принадлежать указанной карте" });
+                return BadRequest(new { message = "РЈР·Р»С‹ РґРѕР»Р¶РЅС‹ РїСЂРёРЅР°РґР»РµР¶Р°С‚СЊ СѓРєР°Р·Р°РЅРЅРѕР№ РєР°СЂС‚Рµ" });
             }
 
             var existingEdge = await _context.Edges
@@ -56,13 +56,13 @@ namespace KnowledgeMap.Backend.Controllers
 
             if (existingEdge != null)
             {
-                return BadRequest(new { message = "Такая связь уже существует" });
+                return BadRequest(new { message = "РўР°РєР°СЏ СЃРІСЏР·СЊ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚" });
             }
 
             var edgeType = await ResolveEdgeTypeAsync(createEdgeDto.MapId, createEdgeDto.TypeId, createEdgeDto.CustomTypeId);
             if (edgeType == null && (createEdgeDto.TypeId.HasValue || createEdgeDto.CustomTypeId.HasValue))
             {
-                return BadRequest(new { message = "Указанный тип связи не существует" });
+                return BadRequest(new { message = "РЈРєР°Р·Р°РЅРЅС‹Р№ С‚РёРї СЃРІСЏР·Рё РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚" });
             }
 
             var edge = new Edge
@@ -70,6 +70,7 @@ namespace KnowledgeMap.Backend.Controllers
                 SourceNodeId = createEdgeDto.SourceNodeId,
                 TargetNodeId = createEdgeDto.TargetNodeId,
                 TypeId = edgeType?.Id,
+                Label = NormalizeLabel(createEdgeDto.Label),
                 IsHierarchy = createEdgeDto.IsHierarchy,
                 CreatedAt = DateTime.UtcNow
             };
@@ -80,7 +81,7 @@ namespace KnowledgeMap.Backend.Controllers
             var createdEdge = await LoadEdgeForResponseAsync(edge.Id);
             if (createdEdge == null)
             {
-                return NotFound(new { message = "Связь не найдена" });
+                return NotFound(new { message = "РЎРІСЏР·СЊ РЅРµ РЅР°Р№РґРµРЅР°" });
             }
 
             return CreatedAtAction(nameof(GetEdge), new { id = edge.Id }, BuildEdgeResponse(createdEdge));
@@ -94,7 +95,7 @@ namespace KnowledgeMap.Backend.Controllers
             var edge = await LoadEdgeForResponseAsync(id);
             if (edge == null)
             {
-                return NotFound(new { message = "Связь не найдена" });
+                return NotFound(new { message = "РЎРІСЏР·СЊ РЅРµ РЅР°Р№РґРµРЅР°" });
             }
 
             var mapId = edge.SourceNode.MapId;
@@ -119,7 +120,7 @@ namespace KnowledgeMap.Backend.Controllers
 
             if (edge == null)
             {
-                return NotFound(new { message = "Связь не найдена" });
+                return NotFound(new { message = "РЎРІСЏР·СЊ РЅРµ РЅР°Р№РґРµРЅР°" });
             }
 
             if (edge.SourceNode.Map.OwnerId != userId)
@@ -127,21 +128,21 @@ namespace KnowledgeMap.Backend.Controllers
                 return Forbid();
             }
 
-            if (!updateEdgeDto.TypeId.HasValue && !updateEdgeDto.CustomTypeId.HasValue)
+            if (updateEdgeDto.TypeId.HasValue || updateEdgeDto.CustomTypeId.HasValue)
             {
-                return BadRequest(new { message = "Необходимо указать тип связи (системный или пользовательский)" });
+                var edgeType = await ResolveEdgeTypeAsync(edge.SourceNode.MapId, updateEdgeDto.TypeId, updateEdgeDto.CustomTypeId);
+                if (edgeType == null)
+                {
+                    return BadRequest(new { message = "Указанный тип связи не существует" });
+                }
+
+                edge.TypeId = edgeType.Id;
             }
 
-            var edgeType = await ResolveEdgeTypeAsync(edge.SourceNode.MapId, updateEdgeDto.TypeId, updateEdgeDto.CustomTypeId);
-            if (edgeType == null)
-            {
-                return BadRequest(new { message = "Указанный тип связи не существует" });
-            }
-
-            edge.TypeId = edgeType.Id;
+            edge.Label = NormalizeLabel(updateEdgeDto.Label);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Связь успешно обновлена" });
+            return Ok(new { message = "РЎРІСЏР·СЊ СѓСЃРїРµС€РЅРѕ РѕР±РЅРѕРІР»РµРЅР°" });
         }
 
         [HttpDelete("{id}")]
@@ -156,7 +157,7 @@ namespace KnowledgeMap.Backend.Controllers
 
             if (edge == null)
             {
-                return NotFound(new { message = "Связь не найдена" });
+                return NotFound(new { message = "РЎРІСЏР·СЊ РЅРµ РЅР°Р№РґРµРЅР°" });
             }
 
             if (edge.SourceNode.Map.OwnerId != userId)
@@ -167,7 +168,7 @@ namespace KnowledgeMap.Backend.Controllers
             _context.Edges.Remove(edge);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Связь успешно удалена" });
+            return Ok(new { message = "РЎРІСЏР·СЊ СѓСЃРїРµС€РЅРѕ СѓРґР°Р»РµРЅР°" });
         }
 
         private async Task<Edge?> LoadEdgeForResponseAsync(int edgeId)
@@ -196,6 +197,11 @@ namespace KnowledgeMap.Backend.Controllers
             return null;
         }
 
+        private static string? NormalizeLabel(string? label)
+        {
+            return string.IsNullOrWhiteSpace(label) ? null : label.Trim();
+        }
+
         private static object BuildEdgeResponse(Edge edge)
         {
             return new
@@ -208,7 +214,8 @@ namespace KnowledgeMap.Backend.Controllers
                 TargetNodeTitle = edge.TargetNode.Title,
                 TypeId = TypeScopeMapper.GetSystemEdgeTypeId(edge.Type),
                 CustomTypeId = TypeScopeMapper.GetCustomEdgeTypeId(edge.Type),
-                TypeName = edge.Type?.Name ?? "Неизвестно",
+                TypeName = edge.Type?.Name ?? "РќРµРёР·РІРµСЃС‚РЅРѕ",
+                Label = string.IsNullOrWhiteSpace(edge.Label) ? (edge.Type?.Label ?? string.Empty) : edge.Label,
                 TypeStyle = edge.Type?.Style ?? "solid",
                 TypeLabel = edge.Type?.Label ?? string.Empty,
                 TypeColor = edge.Type?.Color ?? "#666666",

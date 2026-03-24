@@ -17,6 +17,9 @@ namespace KnowledgeMap.Backend.DTOs
         public int? TypeId { get; set; }
         public int? CustomTypeId { get; set; }
 
+        [MaxLength(255)]
+        public string? Label { get; set; }
+
         public bool IsHierarchy { get; set; } = true;
     }
 }

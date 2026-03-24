@@ -386,6 +386,7 @@ namespace KnowledgeMap.Backend.Controllers
                         e.TargetNodeId,
                         TypeId = TypeScopeMapper.GetSystemEdgeTypeId(e.Type),
                         CustomTypeId = TypeScopeMapper.GetCustomEdgeTypeId(e.Type),
+                        Label = string.IsNullOrWhiteSpace(e.Label) ? (e.Type != null ? e.Type.Label : string.Empty) : e.Label,
                         Type = e.Type != null ? new
                         {
                             e.Type.Id,
