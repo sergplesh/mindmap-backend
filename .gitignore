@@ -1,0 +1,38 @@
+# Build output
+/bin/
+/obj/
+/publish/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+.vscode/
+
+# Entity Framework
+/Migrations/
+
+# Configuration files with secrets
+appsettings.Development.json
+appsettings.Production.json
+
+# Logs
+*.log
+logs/
+
+# Package Manager Console
+package-lock.json
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Mac
+.DS_Store
+
+# Test results
+/TestResults/
