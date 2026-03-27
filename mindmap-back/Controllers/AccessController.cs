@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using KnowledgeMap.Backend.Data;
-using KnowledgeMap.Backend.Models;
 using KnowledgeMap.Backend.DTOs;
+using KnowledgeMap.Backend.Repositories;
+using KnowledgeMap.Backend.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KnowledgeMap.Backend.Controllers
 {
@@ -12,182 +13,45 @@ namespace KnowledgeMap.Backend.Controllers
     [Route("api/[controller]")]
     public class AccessController : BaseController
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IAccessService _accessService;
 
-        public AccessController(ApplicationDbContext context)
+        [ActivatorUtilitiesConstructor]
+        public AccessController(IAccessService accessService)
         {
-            _context = context;
+            _accessService = accessService;
         }
 
-        // POST: api/access/invite - пригласить пользователя на карту
+        public AccessController(ApplicationDbContext context)
+            : this(new AccessService(new AccessRepository(context)))
+        {
+        }
+
         [HttpPost("invite")]
         public async Task<IActionResult> InviteUser(InviteDto inviteDto)
         {
-            var currentUserId = GetCurrentUserId();
-
-            // Проверяем существование карты
-            var map = await _context.Maps
-                .Include(m => m.Owner)
-                .FirstOrDefaultAsync(m => m.Id == inviteDto.MapId);
-
-            if (map == null)
-            {
-                return NotFound(new { message = "Карта не найдена" });
-            }
-
-            // Только владелец может приглашать
-            if (map.OwnerId != currentUserId)
-            {
-                return Forbid();
-            }
-
-            // Ищем пользователя по логину
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == inviteDto.Username);
-
-            if (user == null)
-            {
-                return NotFound(new { message = "Пользователь не найден" });
-            }
-
-            // Нельзя пригласить самого себя
-            if (user.Id == currentUserId)
-            {
-                return BadRequest(new { message = "Нельзя пригласить самого себя" });
-            }
-
-            // Проверяем, есть ли уже доступ
-            var existingAccess = await _context.Accesses
-                .FirstOrDefaultAsync(a => a.MapId == inviteDto.MapId && a.UserId == user.Id);
-
-            if (existingAccess != null)
-            {
-                return BadRequest(new { message = "У пользователя уже есть доступ к этой карте" });
-            }
-
-            // Создаём доступ
-            var access = new Access
-            {
-                MapId = inviteDto.MapId,
-                UserId = user.Id,
-                Role = inviteDto.Role // "observer" или "learner"
-            };
-
-            _context.Accesses.Add(access);
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = "Пользователь приглашён",
-                access = new
-                {
-                    id = access.Id,
-                    accessId = access.Id,
-                    userId = user.Id,
-                    username = user.Username,
-                    role = access.Role
-                }
-            });
+            var result = await _accessService.InviteUserAsync(GetCurrentUserId(), inviteDto);
+            return HandleServiceResult(result);
         }
 
-        // GET: api/access/map/{mapId} - получить всех пользователей с доступом к карте
         [HttpGet("map/{mapId}")]
         public async Task<IActionResult> GetMapAccess(int mapId)
         {
-            var currentUserId = GetCurrentUserId();
-
-            var map = await _context.Maps.FindAsync(mapId);
-            if (map == null)
-            {
-                return NotFound(new { message = "Карта не найдена" });
-            }
-
-            // Только владелец может видеть список доступа
-            if (map.OwnerId != currentUserId)
-            {
-                return Forbid();
-            }
-
-            var accesses = await _context.Accesses
-                .Include(a => a.User)
-                .Where(a => a.MapId == mapId)
-                .Select(a => new
-                {
-                    a.Id,
-                    User = new
-                    {
-                        a.User.Id,
-                        a.User.Username
-                    },
-                    a.Role
-                })
-                .ToListAsync();
-
-            // Преобразуем в более удобный формат
-            var result = accesses.Select(a => new
-            {
-                id = a.Id,
-                accessId = a.Id,
-                userId = a.User.Id,
-                username = a.User.Username,
-                role = a.Role
-            }).ToList();
-
-            return Ok(result);
+            var result = await _accessService.GetMapAccessAsync(GetCurrentUserId(), mapId);
+            return HandleServiceResult(result);
         }
 
-        // PUT: api/access/{accessId}/role - изменить роль пользователя
         [HttpPut("{accessId}/role")]
         public async Task<IActionResult> UpdateRole(int accessId, UpdateRoleDto updateRoleDto)
         {
-            var currentUserId = GetCurrentUserId();
-
-            var access = await _context.Accesses
-                .Include(a => a.Map)
-                .FirstOrDefaultAsync(a => a.Id == accessId);
-
-            if (access == null)
-            {
-                return NotFound(new { message = "Доступ не найден" });
-            }
-
-            // Только владелец карты может менять роли
-            if (access.Map.OwnerId != currentUserId)
-            {
-                return Forbid();
-            }
-
-            access.Role = updateRoleDto.Role;
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Роль обновлена" });
+            var result = await _accessService.UpdateRoleAsync(GetCurrentUserId(), accessId, updateRoleDto);
+            return HandleServiceResult(result);
         }
 
-        // DELETE: api/access/{accessId} - удалить доступ пользователя
         [HttpDelete("{accessId}")]
         public async Task<IActionResult> RemoveAccess(int accessId)
         {
-            var currentUserId = GetCurrentUserId();
-
-            var access = await _context.Accesses
-                .Include(a => a.Map)
-                .FirstOrDefaultAsync(a => a.Id == accessId);
-
-            if (access == null)
-            {
-                return NotFound(new { message = "Доступ не найден" });
-            }
-
-            // Только владелец карты может удалять доступ
-            if (access.Map.OwnerId != currentUserId)
-            {
-                return Forbid();
-            }
-
-            _context.Accesses.Remove(access);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Доступ удалён" });
+            var result = await _accessService.RemoveAccessAsync(GetCurrentUserId(), accessId);
+            return HandleServiceResult(result);
         }
     }
 }

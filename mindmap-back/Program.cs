@@ -1,5 +1,6 @@
 using KnowledgeMap.Backend.Data;
 using KnowledgeMap.Backend.Middleware;
+using KnowledgeMap.Backend.Repositories;
 using KnowledgeMap.Backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,22 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IAccessRepository, AccessRepository>();
+builder.Services.AddScoped<ICustomTypesRepository, CustomTypesRepository>();
+builder.Services.AddScoped<IMapsRepository, MapsRepository>();
+builder.Services.AddScoped<INodesRepository, NodesRepository>();
+builder.Services.AddScoped<IEdgesRepository, EdgesRepository>();
+builder.Services.AddScoped<IQuestionsRepository, QuestionsRepository>();
+builder.Services.AddScoped<IMapLearningAccessRepository, MapLearningAccessRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAccessService, AccessService>();
+builder.Services.AddScoped<ICustomTypesService, CustomTypesService>();
+builder.Services.AddScoped<IMapsService, MapsService>();
+builder.Services.AddScoped<INodesService, NodesService>();
+builder.Services.AddScoped<IEdgesService, EdgesService>();
+builder.Services.AddScoped<IQuestionsService, QuestionsService>();
+builder.Services.AddScoped<IMapLearningAccessService, MapLearningAccessResolver>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -43,11 +60,11 @@ builder.Services.AddSwaggerGen(c =>
 
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
-        Description = "������� JWT ����� (��� ����� Bearer)",
+        Description = "JWT Bearer Token (use this format: Bearer <token>)",
         Name = "Authorization",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"  // ��� ���������
+        Scheme = "Bearer"
     });
 
     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement

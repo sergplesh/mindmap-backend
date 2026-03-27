@@ -10,7 +10,7 @@ namespace mindmap_back.Tests.Controllers;
 public class MapsControllerTests
 {
     [Fact]
-    public async Task CreateMap_CreatesCentralNodeAndDefaultsEmoji()
+    public async Task CreateMap_CreatesCentralNodeWithoutDefaultEmoji()
     {
         await using var context = TestDbContextFactory.CreateContext();
         var owner = CreateUser(1, "owner");
@@ -33,11 +33,11 @@ public class MapsControllerTests
         var rootNode = await context.Nodes.SingleAsync();
 
         Assert.Equal("Physics", map.Title);
-        Assert.Equal("🗺️", map.Emoji);
+        Assert.Null(map.Emoji);
         Assert.Equal(map.Id, rootNode.MapId);
         Assert.Equal("Physics", rootNode.Title);
         Assert.False(rootNode.RequiresQuiz);
-        Assert.Equal("🗺️", AnonymousObjectReader.Get<string>(payload, "Emoji"));
+        Assert.Null(AnonymousObjectReader.GetObject(payload, "Emoji"));
     }
 
     [Fact]
@@ -198,3 +198,4 @@ public class MapsControllerTests
         UpdatedAt = DateTime.UtcNow
     };
 }
+

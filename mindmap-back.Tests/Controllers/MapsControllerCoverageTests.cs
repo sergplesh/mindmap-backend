@@ -164,7 +164,7 @@ public class MapsControllerCoverageTests
         {
             Title = "After",
             Description = "Updated",
-            Emoji = "📘"
+            Emoji = "рџ“"
         });
 
         var ok = Assert.IsType<OkObjectResult>(result);
@@ -173,7 +173,7 @@ public class MapsControllerCoverageTests
         var savedMap = await context.Maps.SingleAsync();
         Assert.Equal("After", savedMap.Title);
         Assert.Equal("Updated", savedMap.Description);
-        Assert.Equal("📘", savedMap.Emoji);
+        Assert.Equal("рџ“", savedMap.Emoji);
     }
 
     [Fact]
@@ -505,3 +505,4 @@ public class MapsControllerCoverageTests
         UpdatedAt = DateTime.UtcNow
     };
 }
+

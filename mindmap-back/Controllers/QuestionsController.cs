@@ -1,10 +1,10 @@
 using KnowledgeMap.Backend.Data;
 using KnowledgeMap.Backend.DTOs;
-using KnowledgeMap.Backend.Models;
+using KnowledgeMap.Backend.Repositories;
 using KnowledgeMap.Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KnowledgeMap.Backend.Controllers
 {
@@ -13,385 +13,61 @@ namespace KnowledgeMap.Backend.Controllers
     [Route("api/[controller]")]
     public class QuestionsController : BaseController
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IQuestionsService _questionsService;
+
+        [ActivatorUtilitiesConstructor]
+        public QuestionsController(IQuestionsService questionsService)
+        {
+            _questionsService = questionsService;
+        }
 
         public QuestionsController(ApplicationDbContext context)
+            : this(new QuestionsService(
+                new QuestionsRepository(context),
+                new MapLearningAccessResolver(new MapLearningAccessRepository(context))))
         {
-            _context = context;
         }
 
         [HttpGet("node/{nodeId}")]
         public async Task<IActionResult> GetNodeQuestions(int nodeId)
         {
-            var userId = GetCurrentUserId();
+            var result = await _questionsService.GetNodeQuestionsAsync(nodeId, GetCurrentUserId());
+            return HandleServiceResult(result);
+        }
 
-            var node = await _context.Nodes
-                .Include(n => n.Map)
-                .FirstOrDefaultAsync(n => n.Id == nodeId);
-
-            if (node == null)
-            {
-                return NotFound(new { message = "Узел не найден" });
-            }
-
-            var hasAccess = await HasAccessToMap(_context, node.MapId, userId);
-            if (!hasAccess)
-            {
-                return Forbid();
-            }
-
-            var accessSnapshot = await MapLearningAccessResolver.BuildAsync(_context, node.MapId, userId);
-            var userRole = accessSnapshot.UserRole;
-            var isOwner = userRole == "owner";
-            var isObserver = userRole == "observer";
-            var nodeState = accessSnapshot.NodeStates.TryGetValue(nodeId, out var state)
-                ? state
-                : new NodeLearningState();
-
-            if (!isOwner && !isObserver && !nodeState.IsVisible)
-            {
-                return Forbid();
-            }
-
-            var questions = await _context.Questions
-                .Include(q => q.AnswerOptions)
-                .Where(q => q.NodeId == nodeId)
-                .Select(q => new
-                {
-                    q.Id,
-                    q.QuestionText,
-                    q.QuestionType,
-                    AnswerOptions = q.AnswerOptions.Select(a => new
-                    {
-                        a.Id,
-                        a.OptionText,
-                        IsCorrect = isOwner ? a.IsCorrect : (bool?)null
-                    })
-                })
-                .ToListAsync();
-
-            return Ok(questions);
+        [HttpGet("node/{nodeId}/latest-attempt")]
+        public async Task<IActionResult> GetLatestAttempt(int nodeId)
+        {
+            var result = await _questionsService.GetLatestAttemptAsync(nodeId, GetCurrentUserId());
+            return HandleServiceResult(result);
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateQuestion(CreateQuestionDto dto)
         {
-            var userId = GetCurrentUserId();
-
-            var node = await _context.Nodes
-                .Include(n => n.Map)
-                .FirstOrDefaultAsync(n => n.Id == dto.NodeId);
-
-            if (node == null)
-            {
-                return NotFound(new { message = "Узел не найден" });
-            }
-
-            if (node.Map.OwnerId != userId)
-            {
-                return Forbid();
-            }
-
-            var question = new Question
-            {
-                NodeId = dto.NodeId,
-                QuestionText = dto.QuestionText,
-                QuestionType = dto.QuestionType
-            };
-
-            _context.Questions.Add(question);
-            await _context.SaveChangesAsync();
-
-            if (dto.AnswerOptions != null && dto.AnswerOptions.Any())
-            {
-                foreach (var opt in dto.AnswerOptions)
-                {
-                    _context.AnswerOptions.Add(new AnswerOption
-                    {
-                        QuestionId = question.Id,
-                        OptionText = opt.OptionText,
-                        IsCorrect = opt.IsCorrect
-                    });
-                }
-
-                await _context.SaveChangesAsync();
-            }
-
-            return Ok(new
-            {
-                question.Id,
-                question.QuestionText,
-                question.QuestionType
-            });
+            var result = await _questionsService.CreateQuestionAsync(GetCurrentUserId(), dto);
+            return HandleServiceResult(result);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateQuestion(int id, UpdateQuestionDto dto)
         {
-            var userId = GetCurrentUserId();
-
-            var question = await _context.Questions
-                .Include(q => q.AnswerOptions)
-                .Include(q => q.Node)
-                    .ThenInclude(n => n.Map)
-                .FirstOrDefaultAsync(q => q.Id == id);
-
-            if (question == null)
-            {
-                return NotFound(new { message = "Вопрос не найден" });
-            }
-
-            if (question.Node.Map.OwnerId != userId)
-            {
-                return Forbid();
-            }
-
-            question.QuestionText = dto.QuestionText;
-            question.QuestionType = dto.QuestionType;
-
-            if (dto.AnswerOptions != null)
-            {
-                var incomingOptions = dto.AnswerOptions
-                    .Where(option => !string.IsNullOrWhiteSpace(option.OptionText))
-                    .ToList();
-
-                var incomingOptionIds = incomingOptions
-                    .Where(option => option.Id.HasValue)
-                    .Select(option => option.Id!.Value)
-                    .ToHashSet();
-
-                var optionsToRemove = question.AnswerOptions
-                    .Where(option => !incomingOptionIds.Contains(option.Id))
-                    .ToList();
-
-                if (optionsToRemove.Count > 0)
-                {
-                    var optionIdsToRemove = optionsToRemove
-                        .Select(option => option.Id)
-                        .ToList();
-
-                    var hasSelections = await _context.AnswerResultSelections
-                        .AnyAsync(selection => optionIdsToRemove.Contains(selection.AnswerOptionId));
-
-                    if (hasSelections)
-                    {
-                        return BadRequest(new
-                        {
-                            message = "Нельзя удалить вариант ответа, по которому уже есть история прохождения. Измените его текст или оставьте вариант."
-                        });
-                    }
-
-                    _context.AnswerOptions.RemoveRange(optionsToRemove);
-                }
-
-                foreach (var optionDto in incomingOptions)
-                {
-                    if (optionDto.Id.HasValue)
-                    {
-                        var existingOption = question.AnswerOptions
-                            .FirstOrDefault(option => option.Id == optionDto.Id.Value);
-
-                        if (existingOption == null)
-                        {
-                            return BadRequest(new { message = "Некорректный вариант ответа." });
-                        }
-
-                        existingOption.OptionText = optionDto.OptionText.Trim();
-                        existingOption.IsCorrect = optionDto.IsCorrect;
-                        continue;
-                    }
-
-                    question.AnswerOptions.Add(new AnswerOption
-                    {
-                        QuestionId = question.Id,
-                        OptionText = optionDto.OptionText.Trim(),
-                        IsCorrect = optionDto.IsCorrect
-                    });
-                }
-            }
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Вопрос обновлён" });
+            var result = await _questionsService.UpdateQuestionAsync(id, GetCurrentUserId(), dto);
+            return HandleServiceResult(result);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteQuestion(int id)
         {
-            var userId = GetCurrentUserId();
-
-            var question = await _context.Questions
-                .Include(q => q.Node)
-                    .ThenInclude(n => n.Map)
-                .FirstOrDefaultAsync(q => q.Id == id);
-
-            if (question == null)
-            {
-                return NotFound(new { message = "Вопрос не найден" });
-            }
-
-            if (question.Node.Map.OwnerId != userId)
-            {
-                return Forbid();
-            }
-
-            _context.Questions.Remove(question);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Вопрос удалён" });
+            var result = await _questionsService.DeleteQuestionAsync(id, GetCurrentUserId());
+            return HandleServiceResult(result);
         }
 
         [HttpPost("verify")]
         public async Task<IActionResult> VerifyAnswers(VerifyAnswersDto dto)
         {
-            var userId = GetCurrentUserId();
-
-            var node = await _context.Nodes
-                .Include(n => n.Map)
-                .Include(n => n.Questions)
-                    .ThenInclude(q => q.AnswerOptions)
-                .FirstOrDefaultAsync(n => n.Id == dto.NodeId);
-
-            if (node == null)
-            {
-                return NotFound(new { message = "Узел не найден" });
-            }
-
-            var hasAccess = await HasAccessToMap(_context, node.MapId, userId);
-            if (!hasAccess)
-            {
-                return Forbid();
-            }
-
-            var accessSnapshot = await MapLearningAccessResolver.BuildAsync(_context, node.MapId, userId);
-            var userRole = accessSnapshot.UserRole;
-            var isOwner = userRole == "owner";
-            var isObserver = userRole == "observer";
-            var nodeState = accessSnapshot.NodeStates.TryGetValue(node.Id, out var state)
-                ? state
-                : new NodeLearningState();
-
-            if (isOwner)
-            {
-                return Ok(new
-                {
-                    message = "Владелец карты имеет доступ ко всем узлам",
-                    isPassed = true,
-                    results = new List<object>()
-                });
-            }
-
-            if (isObserver || !nodeState.IsVisible)
-            {
-                return Forbid();
-            }
-
-            var alreadyPassed = await _context.AnswerResults
-                .AnyAsync(ar => ar.NodeId == node.Id && ar.UserId == userId && ar.IsPassed);
-
-            if (alreadyPassed || nodeState.IsUnlocked)
-            {
-                return Ok(new
-                {
-                    message = "Узел уже открыт",
-                    isPassed = true,
-                    results = new List<object>()
-                });
-            }
-
-            var allCorrect = true;
-            var results = new List<object>();
-
-            foreach (var question in node.Questions)
-            {
-                var userAnswer = dto.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
-                if (userAnswer == null)
-                {
-                    allCorrect = false;
-                    continue;
-                }
-
-                var isCorrect = false;
-
-                if (question.QuestionType == "single_choice")
-                {
-                    var selectedOption = question.AnswerOptions
-                        .FirstOrDefault(o => o.Id == userAnswer.SelectedOptionId);
-                    isCorrect = selectedOption != null && selectedOption.IsCorrect;
-                }
-                else if (question.QuestionType == "multiple_choice")
-                {
-                    var correctOptionIds = question.AnswerOptions
-                        .Where(o => o.IsCorrect)
-                        .Select(o => o.Id)
-                        .ToHashSet();
-
-                    var selectedIds = userAnswer.SelectedOptionIds?.ToHashSet() ?? new HashSet<int>();
-                    isCorrect = correctOptionIds.SetEquals(selectedIds);
-                }
-
-                results.Add(new
-                {
-                    question.Id,
-                    question.QuestionText,
-                    isCorrect
-                });
-
-                if (!isCorrect)
-                {
-                    allCorrect = false;
-                }
-            }
-
-            var attempt = new AnswerResult
-            {
-                UserId = userId,
-                NodeId = node.Id,
-                IsPassed = allCorrect,
-                CompletedAt = DateTime.UtcNow
-            };
-
-            foreach (var answer in dto.Answers)
-            {
-                if (answer.SelectedOptionId.HasValue)
-                {
-                    attempt.Selections.Add(new AnswerResultSelection
-                    {
-                        AnswerOptionId = answer.SelectedOptionId.Value
-                    });
-                }
-
-                if (answer.SelectedOptionIds != null)
-                {
-                    foreach (var optionId in answer.SelectedOptionIds.Distinct())
-                    {
-                        attempt.Selections.Add(new AnswerResultSelection
-                        {
-                            AnswerOptionId = optionId
-                        });
-                    }
-                }
-            }
-
-            _context.AnswerResults.Add(attempt);
-            await _context.SaveChangesAsync();
-
-            if (allCorrect)
-            {
-                return Ok(new
-                {
-                    message = "Все ответы правильные! Узел открыт.",
-                    isPassed = true,
-                    results
-                });
-            }
-
-            return Ok(new
-            {
-                message = "Есть неправильные ответы. Попробуйте снова.",
-                isPassed = false,
-                results
-            });
+            var result = await _questionsService.VerifyAnswersAsync(GetCurrentUserId(), dto);
+            return HandleServiceResult(result);
         }
     }
 }

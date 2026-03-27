@@ -26,5 +26,6 @@ namespace KnowledgeMap.Backend.Models
         public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
 
         public virtual ICollection<AnswerResultSelection> Selections { get; set; } = new List<AnswerResultSelection>();
+        public virtual ICollection<AnswerResultQuestion> Questions { get; set; } = new List<AnswerResultQuestion>();
     }
 }

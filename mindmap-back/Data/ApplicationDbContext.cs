@@ -24,6 +24,8 @@ namespace KnowledgeMap.Backend.Data
         public DbSet<Access> Accesses { get; set; } = null!;
         public DbSet<LearningProgress> LearningProgresses { get; set; } = null!;
         public DbSet<AnswerResult> AnswerResults { get; set; } = null!;
+        public DbSet<AnswerResultQuestion> AnswerResultQuestions { get; set; } = null!;
+        public DbSet<AnswerResultQuestionOption> AnswerResultQuestionOptions { get; set; } = null!;
         public DbSet<AnswerResultSelection> AnswerResultSelections { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -88,6 +90,14 @@ namespace KnowledgeMap.Backend.Data
 
             modelBuilder.Entity<AnswerResult>()
                 .HasIndex(ar => new { ar.UserId, ar.NodeId, ar.CompletedAt });
+
+            modelBuilder.Entity<AnswerResultQuestion>()
+                .HasIndex(question => new { question.AnswerResultId, question.DisplayOrder })
+                .IsUnique();
+
+            modelBuilder.Entity<AnswerResultQuestionOption>()
+                .HasIndex(option => new { option.AnswerResultQuestionId, option.DisplayOrder })
+                .IsUnique();
 
             modelBuilder.Entity<AnswerResultSelection>()
                 .HasIndex(s => new { s.AnswerResultId, s.AnswerOptionId })
@@ -218,6 +228,18 @@ namespace KnowledgeMap.Backend.Data
                 .HasMany(ar => ar.Selections)
                 .WithOne(s => s.AnswerResult)
                 .HasForeignKey(s => s.AnswerResultId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AnswerResult>()
+                .HasMany(ar => ar.Questions)
+                .WithOne(question => question.AnswerResult)
+                .HasForeignKey(question => question.AnswerResultId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AnswerResultQuestion>()
+                .HasMany(question => question.Options)
+                .WithOne(option => option.Question)
+                .HasForeignKey(option => option.AnswerResultQuestionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<AnswerResultSelection>()

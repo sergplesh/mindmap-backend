@@ -1,9 +1,14 @@
 using KnowledgeMap.Backend.Data;
 using KnowledgeMap.Backend.Models;
-using Microsoft.EntityFrameworkCore;
+using KnowledgeMap.Backend.Repositories;
 
 namespace KnowledgeMap.Backend.Services
 {
+    public interface IMapLearningAccessService
+    {
+        Task<MapLearningAccessSnapshot> BuildAsync(int mapId, int userId, Map? loadedMap = null);
+    }
+
     public sealed class NodeLearningState
     {
         public bool IsVisible { get; init; }
@@ -19,45 +24,31 @@ namespace KnowledgeMap.Backend.Services
         public ISet<int> PassedNodeIds { get; init; } = new HashSet<int>();
     }
 
-    public static class MapLearningAccessResolver
+    public sealed class MapLearningAccessResolver : IMapLearningAccessService
     {
-        public static async Task<MapLearningAccessSnapshot> BuildAsync(
-            ApplicationDbContext context,
-            int mapId,
-            int userId,
-            Map? loadedMap = null)
-        {
-            var map = loadedMap ?? await context.Maps
-                .Include(m => m.Nodes)
-                    .ThenInclude(n => n.Questions)
-                .FirstOrDefaultAsync(m => m.Id == mapId);
+        private readonly IMapLearningAccessRepository _repository;
 
+        public MapLearningAccessResolver(IMapLearningAccessRepository repository)
+        {
+            _repository = repository;
+        }
+
+        public async Task<MapLearningAccessSnapshot> BuildAsync(int mapId, int userId, Map? loadedMap = null)
+        {
+            var map = loadedMap ?? await _repository.GetMapWithNodesAndQuestionsAsync(mapId);
             if (map == null)
             {
                 return new MapLearningAccessSnapshot();
             }
 
-            var hierarchyEdges = await context.Edges
-                .Where(e => e.IsHierarchy && e.SourceNode.MapId == mapId && e.TargetNode.MapId == mapId)
-                .Select(e => new
-                {
-                    e.SourceNodeId,
-                    e.TargetNodeId
-                })
-                .ToListAsync();
-
-            var userRole = await ResolveUserRoleAsync(context, map, userId);
+            var hierarchyEdges = await _repository.GetHierarchyEdgesAsync(mapId);
+            var userRole = await ResolveUserRoleAsync(map, userId);
             var unlockAll = userRole == "owner" || userRole == "observer";
             var nodeIds = map.Nodes.Select(n => n.Id).ToList();
 
             var passedNodeIds = unlockAll
                 ? new HashSet<int>()
-                : (await context.AnswerResults
-                    .Where(ar => ar.UserId == userId && ar.IsPassed && nodeIds.Contains(ar.NodeId))
-                    .Select(ar => ar.NodeId)
-                    .Distinct()
-                    .ToListAsync())
-                    .ToHashSet();
+                : await _repository.GetPassedNodeIdsAsync(userId, nodeIds);
 
             var childrenByNodeId = new Dictionary<int, List<int>>();
             var parentByNodeId = new Dictionary<int, int>();
@@ -178,7 +169,17 @@ namespace KnowledgeMap.Backend.Services
             };
         }
 
-        private static async Task<string> ResolveUserRoleAsync(ApplicationDbContext context, Map map, int userId)
+        public static Task<MapLearningAccessSnapshot> BuildAsync(
+            ApplicationDbContext context,
+            int mapId,
+            int userId,
+            Map? loadedMap = null)
+        {
+            return new MapLearningAccessResolver(new MapLearningAccessRepository(context))
+                .BuildAsync(mapId, userId, loadedMap);
+        }
+
+        private async Task<string> ResolveUserRoleAsync(Map map, int userId)
         {
             if (map.OwnerId == userId)
             {
@@ -194,11 +195,7 @@ namespace KnowledgeMap.Backend.Services
                 }
             }
 
-            var accessRole = await context.Accesses
-                .Where(a => a.MapId == map.Id && a.UserId == userId)
-                .Select(a => a.Role)
-                .FirstOrDefaultAsync();
-
+            var accessRole = await _repository.GetAccessRoleAsync(map.Id, userId);
             return accessRole ?? "observer";
         }
     }

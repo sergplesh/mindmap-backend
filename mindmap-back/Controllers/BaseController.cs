@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using KnowledgeMap.Backend.Data;
+using KnowledgeMap.Backend.Services;
 
 namespace KnowledgeMap.Backend.Controllers
 {
@@ -27,6 +28,27 @@ namespace KnowledgeMap.Backend.Controllers
 
             return await context.Accesses
                 .AnyAsync(a => a.MapId == mapId && a.UserId == userId);
+        }
+
+        protected IActionResult HandleServiceResult(ServiceResult result)
+        {
+            return result.Type switch
+            {
+                ServiceResultType.Success => result.Value == null ? Ok() : Ok(result.Value),
+                ServiceResultType.BadRequest => result.Value == null ? BadRequest() : BadRequest(result.Value),
+                ServiceResultType.NotFound => result.Value == null ? NotFound() : NotFound(result.Value),
+                ServiceResultType.Forbidden => Forbid(),
+                ServiceResultType.Unauthorized => result.Value == null ? Unauthorized() : Unauthorized(result.Value),
+                ServiceResultType.Created => throw new InvalidOperationException("Use HandleCreatedAtAction for created results."),
+                _ => throw new InvalidOperationException("Unsupported service result type.")
+            };
+        }
+
+        protected IActionResult HandleCreatedAtAction(ServiceResult result, string actionName)
+        {
+            return result.Type == ServiceResultType.Created
+                ? CreatedAtAction(actionName, result.RouteValues, result.Value)
+                : HandleServiceResult(result);
         }
     }
 }
