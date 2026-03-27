@@ -59,6 +59,9 @@ namespace KnowledgeMap.Backend.Services
                 return ServiceResult.BadRequest(new { message = "Р Р€Р С”Р В°Р В·Р В°Р Р…Р Р…РЎвЂ№Р в„– РЎвЂљР С‘Р С— РЎРѓР Р†РЎРЏР В·Р С‘ Р Р…Р Вµ РЎРѓРЎС“РЎвЂ°Р ВµРЎРѓРЎвЂљР Р†РЎС“Р ВµРЎвЂљ" });
             }
 
+            var now = DateTime.UtcNow;
+            map.UpdatedAt = now;
+
             var edge = new Edge
             {
                 SourceNodeId = createEdgeDto.SourceNodeId,
@@ -66,7 +69,7 @@ namespace KnowledgeMap.Backend.Services
                 TypeId = edgeType?.Id,
                 Label = NormalizeLabel(createEdgeDto.Label),
                 IsHierarchy = createEdgeDto.IsHierarchy,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = now
             };
 
             await _repository.AddEdgeAsync(edge);
@@ -122,6 +125,7 @@ namespace KnowledgeMap.Backend.Services
             }
 
             edge.Label = NormalizeLabel(updateEdgeDto.Label);
+            edge.SourceNode.Map.UpdatedAt = DateTime.UtcNow;
             await _repository.SaveChangesAsync();
 
             return ServiceResult.Success(new { message = "Р РЋР Р†РЎРЏР В·РЎРЉ РЎС“РЎРѓР С—Р ВµРЎв‚¬Р Р…Р С• Р С•Р В±Р Р…Р С•Р Р†Р В»Р ВµР Р…Р В°" });
@@ -140,6 +144,7 @@ namespace KnowledgeMap.Backend.Services
                 return ServiceResult.Forbidden();
             }
 
+            edge.SourceNode.Map.UpdatedAt = DateTime.UtcNow;
             _repository.RemoveEdge(edge);
             await _repository.SaveChangesAsync();
 

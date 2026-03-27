@@ -44,6 +44,9 @@ namespace KnowledgeMap.Backend.Services
                 return ServiceResult.BadRequest(new { message = "РЈРєР°Р·Р°РЅРЅС‹Р№ С‚РёРї СѓР·Р»Р° РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚" });
             }
 
+            var now = DateTime.UtcNow;
+            map.UpdatedAt = now;
+
             var node = new Node
             {
                 MapId = createNodeDto.MapId,
@@ -55,8 +58,8 @@ namespace KnowledgeMap.Backend.Services
                 Width = createNodeDto.Width,
                 Height = createNodeDto.Height,
                 RequiresQuiz = createNodeDto.RequiresQuiz ?? true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = now,
+                UpdatedAt = now
             };
 
             await _repository.AddNodeAsync(node);
@@ -133,7 +136,9 @@ namespace KnowledgeMap.Backend.Services
             node.Width = updateNodeDto.Width ?? node.Width;
             node.Height = updateNodeDto.Height ?? node.Height;
             node.TypeId = nodeType?.Id;
-            node.UpdatedAt = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            node.UpdatedAt = now;
+            node.Map.UpdatedAt = now;
 
             await _repository.SaveChangesAsync();
 
@@ -160,7 +165,9 @@ namespace KnowledgeMap.Backend.Services
 
             node.XPosition = positionDto.XPosition;
             node.YPosition = positionDto.YPosition;
-            node.UpdatedAt = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            node.UpdatedAt = now;
+            node.Map.UpdatedAt = now;
 
             await _repository.SaveChangesAsync();
 
@@ -181,6 +188,7 @@ namespace KnowledgeMap.Backend.Services
             }
 
             var edges = await _repository.GetEdgesForNodeAsync(nodeId);
+            node.Map.UpdatedAt = DateTime.UtcNow;
             _repository.RemoveEdges(edges);
             _repository.RemoveNode(node);
             await _repository.SaveChangesAsync();

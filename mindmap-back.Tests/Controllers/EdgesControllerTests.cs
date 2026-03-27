@@ -52,6 +52,36 @@ public class EdgesControllerTests
     }
 
     [Fact]
+    public async Task CreateEdge_UpdatesMapUpdatedAt()
+    {
+        await using var context = TestDbContextFactory.CreateContext();
+        var owner = CreateUser(1, "owner");
+        var oldTimestamp = DateTime.UtcNow.AddMinutes(-10);
+        var map = CreateMap(10, owner.Id);
+        map.UpdatedAt = oldTimestamp;
+        var source = CreateNode(100, map.Id, "Source");
+        var target = CreateNode(101, map.Id, "Target");
+
+        context.Users.Add(owner);
+        context.Maps.Add(map);
+        context.Nodes.AddRange(source, target);
+        await context.SaveChangesAsync();
+
+        var controller = new EdgesController(context).WithAuthenticatedUser(owner.Id, owner.Username);
+
+        var result = await controller.CreateEdge(new CreateEdgeDto
+        {
+            MapId = map.Id,
+            SourceNodeId = source.Id,
+            TargetNodeId = target.Id
+        });
+
+        Assert.IsType<CreatedAtActionResult>(result);
+        var updatedMap = await context.Maps.SingleAsync(m => m.Id == map.Id);
+        Assert.True(updatedMap.UpdatedAt > oldTimestamp);
+    }
+
+    [Fact]
     public async Task CreateEdge_ReturnsNotFound_WhenMapDoesNotExist()
     {
         await using var context = TestDbContextFactory.CreateContext();
@@ -238,6 +268,40 @@ public class EdgesControllerTests
         var updatedEdge = await context.Edges.SingleAsync();
         Assert.Equal(customType.Id, updatedEdge.TypeId);
         Assert.Equal("custom relation", updatedEdge.Label);
+    }
+
+    [Fact]
+    public async Task UpdateEdge_UpdatesMapUpdatedAt()
+    {
+        await using var context = TestDbContextFactory.CreateContext();
+        var owner = CreateUser(1, "owner");
+        var oldTimestamp = DateTime.UtcNow.AddMinutes(-10);
+        var map = CreateMap(10, owner.Id);
+        map.UpdatedAt = oldTimestamp;
+        var source = CreateNode(100, map.Id, "Source");
+        var target = CreateNode(101, map.Id, "Target");
+        var edge = new Edge
+        {
+            Id = 500,
+            SourceNodeId = source.Id,
+            TargetNodeId = target.Id,
+            IsHierarchy = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        context.Users.Add(owner);
+        context.Maps.Add(map);
+        context.Nodes.AddRange(source, target);
+        context.Edges.Add(edge);
+        await context.SaveChangesAsync();
+
+        var controller = new EdgesController(context).WithAuthenticatedUser(owner.Id, owner.Username);
+
+        var result = await controller.UpdateEdge(edge.Id, new UpdateEdgeDto { Label = "updated label" });
+
+        Assert.IsType<OkObjectResult>(result);
+        var updatedMap = await context.Maps.SingleAsync(m => m.Id == map.Id);
+        Assert.True(updatedMap.UpdatedAt > oldTimestamp);
     }
 
     [Fact]
@@ -428,6 +492,40 @@ public class EdgesControllerTests
 
         Assert.IsType<OkObjectResult>(result);
         Assert.Empty(context.Edges);
+    }
+
+    [Fact]
+    public async Task DeleteEdge_UpdatesMapUpdatedAt()
+    {
+        await using var context = TestDbContextFactory.CreateContext();
+        var owner = CreateUser(1, "owner");
+        var oldTimestamp = DateTime.UtcNow.AddMinutes(-10);
+        var map = CreateMap(10, owner.Id);
+        map.UpdatedAt = oldTimestamp;
+        var source = CreateNode(100, map.Id, "Source");
+        var target = CreateNode(101, map.Id, "Target");
+        var edge = new Edge
+        {
+            Id = 500,
+            SourceNodeId = source.Id,
+            TargetNodeId = target.Id,
+            IsHierarchy = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        context.Users.Add(owner);
+        context.Maps.Add(map);
+        context.Nodes.AddRange(source, target);
+        context.Edges.Add(edge);
+        await context.SaveChangesAsync();
+
+        var controller = new EdgesController(context).WithAuthenticatedUser(owner.Id, owner.Username);
+
+        var result = await controller.DeleteEdge(edge.Id);
+
+        Assert.IsType<OkObjectResult>(result);
+        var updatedMap = await context.Maps.SingleAsync(m => m.Id == map.Id);
+        Assert.True(updatedMap.UpdatedAt > oldTimestamp);
     }
 
     private static User CreateUser(int id, string username) => new()

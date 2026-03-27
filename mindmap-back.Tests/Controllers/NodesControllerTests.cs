@@ -198,6 +198,84 @@ public class NodesControllerTests
     }
 
     [Fact]
+    public async Task CreateNode_UpdatesMapUpdatedAt()
+    {
+        await using var context = TestDbContextFactory.CreateContext();
+        var owner = CreateUser(1, "owner");
+        var oldTimestamp = DateTime.UtcNow.AddMinutes(-10);
+        var map = CreateMap(10, owner.Id);
+        map.UpdatedAt = oldTimestamp;
+
+        context.Users.Add(owner);
+        context.Maps.Add(map);
+        await context.SaveChangesAsync();
+
+        var controller = new NodesController(context).WithAuthenticatedUser(owner.Id, owner.Username);
+
+        var result = await controller.CreateNode(new CreateNodeDto
+        {
+            MapId = map.Id,
+            Title = "Created node"
+        });
+
+        Assert.IsType<CreatedAtActionResult>(result);
+        var updatedMap = await context.Maps.SingleAsync(m => m.Id == map.Id);
+        Assert.True(updatedMap.UpdatedAt > oldTimestamp);
+    }
+
+    [Fact]
+    public async Task UpdateNodePosition_UpdatesMapUpdatedAt()
+    {
+        await using var context = TestDbContextFactory.CreateContext();
+        var owner = CreateUser(1, "owner");
+        var oldTimestamp = DateTime.UtcNow.AddMinutes(-10);
+        var map = CreateMap(10, owner.Id);
+        map.UpdatedAt = oldTimestamp;
+        var node = CreateNode(100, map.Id, "Node");
+
+        context.Users.Add(owner);
+        context.Maps.Add(map);
+        context.Nodes.Add(node);
+        await context.SaveChangesAsync();
+
+        var controller = new NodesController(context).WithAuthenticatedUser(owner.Id, owner.Username);
+
+        var result = await controller.UpdateNodePosition(node.Id, new UpdateNodePositionDto
+        {
+            XPosition = 12,
+            YPosition = 34
+        });
+
+        Assert.IsType<OkObjectResult>(result);
+        var updatedMap = await context.Maps.SingleAsync(m => m.Id == map.Id);
+        Assert.True(updatedMap.UpdatedAt > oldTimestamp);
+    }
+
+    [Fact]
+    public async Task DeleteNode_UpdatesMapUpdatedAt()
+    {
+        await using var context = TestDbContextFactory.CreateContext();
+        var owner = CreateUser(1, "owner");
+        var oldTimestamp = DateTime.UtcNow.AddMinutes(-10);
+        var map = CreateMap(10, owner.Id);
+        map.UpdatedAt = oldTimestamp;
+        var node = CreateNode(100, map.Id, "Node");
+
+        context.Users.Add(owner);
+        context.Maps.Add(map);
+        context.Nodes.Add(node);
+        await context.SaveChangesAsync();
+
+        var controller = new NodesController(context).WithAuthenticatedUser(owner.Id, owner.Username);
+
+        var result = await controller.DeleteNode(node.Id);
+
+        Assert.IsType<OkObjectResult>(result);
+        var updatedMap = await context.Maps.SingleAsync(m => m.Id == map.Id);
+        Assert.True(updatedMap.UpdatedAt > oldTimestamp);
+    }
+
+    [Fact]
     public async Task GetNode_ReturnsVisibleButLockedNodeForLearner()
     {
         await using var context = TestDbContextFactory.CreateContext();
