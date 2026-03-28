@@ -26,7 +26,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(createEdgeDto.MapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "Р С™Р В°РЎР‚РЎвЂљР В° Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…Р В°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (map.OwnerId != userId)
@@ -39,24 +39,24 @@ namespace KnowledgeMap.Backend.Services
 
             if (sourceNode == null || targetNode == null)
             {
-                return ServiceResult.BadRequest(new { message = "Р С›Р Т‘Р С‘Р Р… Р С‘Р В· РЎС“Р В·Р В»Р С•Р Р† Р Р…Р Вµ РЎРѓРЎС“РЎвЂ°Р ВµРЎРѓРЎвЂљР Р†РЎС“Р ВµРЎвЂљ" });
+                return ServiceResult.BadRequest(new { message = "Один из узлов не существует" });
             }
 
             if (sourceNode.MapId != createEdgeDto.MapId || targetNode.MapId != createEdgeDto.MapId)
             {
-                return ServiceResult.BadRequest(new { message = "Р Р€Р В·Р В»РЎвЂ№ Р Т‘Р С•Р В»Р В¶Р Р…РЎвЂ№ Р С—РЎР‚Р С‘Р Р…Р В°Р Т‘Р В»Р ВµР В¶Р В°РЎвЂљРЎРЉ РЎС“Р С”Р В°Р В·Р В°Р Р…Р Р…Р С•Р в„– Р С”Р В°РЎР‚РЎвЂљР Вµ" });
+                return ServiceResult.BadRequest(new { message = "Узлы должны принадлежать указанной карте" });
             }
 
             var existingEdge = await _repository.GetExistingEdgeAsync(createEdgeDto.SourceNodeId, createEdgeDto.TargetNodeId);
             if (existingEdge != null)
             {
-                return ServiceResult.BadRequest(new { message = "Р СћР В°Р С”Р В°РЎРЏ РЎРѓР Р†РЎРЏР В·РЎРЉ РЎС“Р В¶Р Вµ РЎРѓРЎС“РЎвЂ°Р ВµРЎРѓРЎвЂљР Р†РЎС“Р ВµРЎвЂљ" });
+                return ServiceResult.BadRequest(new { message = "Такая связь уже существует" });
             }
 
             var edgeType = await _repository.ResolveEdgeTypeAsync(createEdgeDto.MapId, createEdgeDto.TypeId, createEdgeDto.CustomTypeId);
             if (edgeType == null && (createEdgeDto.TypeId.HasValue || createEdgeDto.CustomTypeId.HasValue))
             {
-                return ServiceResult.BadRequest(new { message = "Р Р€Р С”Р В°Р В·Р В°Р Р…Р Р…РЎвЂ№Р в„– РЎвЂљР С‘Р С— РЎРѓР Р†РЎРЏР В·Р С‘ Р Р…Р Вµ РЎРѓРЎС“РЎвЂ°Р ВµРЎРѓРЎвЂљР Р†РЎС“Р ВµРЎвЂљ" });
+                return ServiceResult.BadRequest(new { message = "Указанный тип связи не существует" });
             }
 
             var now = DateTime.UtcNow;
@@ -77,7 +77,7 @@ namespace KnowledgeMap.Backend.Services
             var createdEdge = await _repository.GetEdgeForResponseAsync(edge.Id);
             if (createdEdge == null)
             {
-                return ServiceResult.NotFound(new { message = "Р РЋР Р†РЎРЏР В·РЎРЉ Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…Р В°" });
+                return ServiceResult.NotFound(new { message = "Связь не найдена" });
             }
 
             return ServiceResult.Created(BuildEdgeResponse(createdEdge), new { id = edge.Id });
@@ -88,7 +88,7 @@ namespace KnowledgeMap.Backend.Services
             var edge = await _repository.GetEdgeForResponseAsync(edgeId);
             if (edge == null)
             {
-                return ServiceResult.NotFound(new { message = "Р РЋР Р†РЎРЏР В·РЎРЉ Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…Р В°" });
+                return ServiceResult.NotFound(new { message = "Связь не найдена" });
             }
 
             var hasAccess = await _repository.HasAccessToMapAsync(edge.SourceNode.MapId, userId);
@@ -105,7 +105,7 @@ namespace KnowledgeMap.Backend.Services
             var edge = await _repository.GetEdgeWithOwnerAsync(edgeId);
             if (edge == null)
             {
-                return ServiceResult.NotFound(new { message = "Р РЋР Р†РЎРЏР В·РЎРЉ Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…Р В°" });
+                return ServiceResult.NotFound(new { message = "Связь не найдена" });
             }
 
             if (edge.SourceNode.Map.OwnerId != userId)
@@ -118,7 +118,7 @@ namespace KnowledgeMap.Backend.Services
                 var edgeType = await _repository.ResolveEdgeTypeAsync(edge.SourceNode.MapId, updateEdgeDto.TypeId, updateEdgeDto.CustomTypeId);
                 if (edgeType == null)
                 {
-                    return ServiceResult.BadRequest(new { message = "РЈРєР°Р·Р°РЅРЅС‹Р№ С‚РёРї СЃРІСЏР·Рё РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚" });
+                    return ServiceResult.BadRequest(new { message = "Указанный тип связи не существует" });
                 }
 
                 edge.TypeId = edgeType.Id;
@@ -128,7 +128,7 @@ namespace KnowledgeMap.Backend.Services
             edge.SourceNode.Map.UpdatedAt = DateTime.UtcNow;
             await _repository.SaveChangesAsync();
 
-            return ServiceResult.Success(new { message = "Р РЋР Р†РЎРЏР В·РЎРЉ РЎС“РЎРѓР С—Р ВµРЎв‚¬Р Р…Р С• Р С•Р В±Р Р…Р С•Р Р†Р В»Р ВµР Р…Р В°" });
+            return ServiceResult.Success(new { message = "Связь успешно обновлена" });
         }
 
         public async Task<ServiceResult> DeleteEdgeAsync(int edgeId, int userId)
@@ -136,7 +136,7 @@ namespace KnowledgeMap.Backend.Services
             var edge = await _repository.GetEdgeWithOwnerAsync(edgeId);
             if (edge == null)
             {
-                return ServiceResult.NotFound(new { message = "Р РЋР Р†РЎРЏР В·РЎРЉ Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…Р В°" });
+                return ServiceResult.NotFound(new { message = "Связь не найдена" });
             }
 
             if (edge.SourceNode.Map.OwnerId != userId)
@@ -148,7 +148,7 @@ namespace KnowledgeMap.Backend.Services
             _repository.RemoveEdge(edge);
             await _repository.SaveChangesAsync();
 
-            return ServiceResult.Success(new { message = "Р РЋР Р†РЎРЏР В·РЎРЉ РЎС“РЎРѓР С—Р ВµРЎв‚¬Р Р…Р С• РЎС“Р Т‘Р В°Р В»Р ВµР Р…Р В°" });
+            return ServiceResult.Success(new { message = "Связь успешно удалена" });
         }
 
         private static string? NormalizeLabel(string? label)
@@ -168,7 +168,7 @@ namespace KnowledgeMap.Backend.Services
                 TargetNodeTitle = edge.TargetNode.Title,
                 TypeId = TypeScopeMapper.GetSystemEdgeTypeId(edge.Type),
                 CustomTypeId = TypeScopeMapper.GetCustomEdgeTypeId(edge.Type),
-                TypeName = edge.Type?.Name ?? "Р СњР ВµР С‘Р В·Р Р†Р ВµРЎРѓРЎвЂљР Р…Р С•",
+                TypeName = edge.Type?.Name ?? "Неизвестно",
                 Label = string.IsNullOrWhiteSpace(edge.Label) ? (edge.Type?.Label ?? string.Empty) : edge.Label,
                 TypeStyle = edge.Type?.Style ?? "solid",
                 TypeLabel = edge.Type?.Label ?? string.Empty,

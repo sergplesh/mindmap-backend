@@ -30,7 +30,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(createNodeDto.MapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (map.OwnerId != userId)
@@ -41,7 +41,7 @@ namespace KnowledgeMap.Backend.Services
             var nodeType = await _repository.ResolveNodeTypeAsync(createNodeDto.MapId, createNodeDto.TypeId, createNodeDto.CustomTypeId);
             if (nodeType == null && (createNodeDto.TypeId.HasValue || createNodeDto.CustomTypeId.HasValue))
             {
-                return ServiceResult.BadRequest(new { message = "РЈРєР°Р·Р°РЅРЅС‹Р№ С‚РёРї СѓР·Р»Р° РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚" });
+                return ServiceResult.BadRequest(new { message = "Указанный тип узла не существует" });
             }
 
             var now = DateTime.UtcNow;
@@ -72,7 +72,7 @@ namespace KnowledgeMap.Backend.Services
             var createdNode = await _repository.GetNodeForResponseAsync(node.Id);
             if (createdNode == null)
             {
-                return ServiceResult.NotFound(new { message = "РЈР·РµР» РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Узел не найден" });
             }
 
             return ServiceResult.Created(BuildNodeResponse(createdNode, true, true, false), new { id = node.Id });
@@ -83,7 +83,7 @@ namespace KnowledgeMap.Backend.Services
             var node = await _repository.GetNodeForResponseAsync(nodeId);
             if (node == null)
             {
-                return ServiceResult.NotFound(new { message = "РЈР·РµР» РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Узел не найден" });
             }
 
             var hasAccess = await _repository.HasAccessToMapAsync(node.MapId, userId);
@@ -113,7 +113,7 @@ namespace KnowledgeMap.Backend.Services
             var node = await _repository.GetNodeWithMapAsync(nodeId);
             if (node == null)
             {
-                return ServiceResult.NotFound(new { message = "РЈР·РµР» РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Узел не найден" });
             }
 
             if (node.Map.OwnerId != userId)
@@ -125,7 +125,7 @@ namespace KnowledgeMap.Backend.Services
             var nodeType = await _repository.ResolveNodeTypeAsync(node.MapId, updateNodeDto.TypeId, updateNodeDto.CustomTypeId);
             if (nodeType == null && (updateNodeDto.TypeId.HasValue || updateNodeDto.CustomTypeId.HasValue))
             {
-                return ServiceResult.BadRequest(new { message = "РЈРєР°Р·Р°РЅРЅС‹Р№ С‚РёРї СѓР·Р»Р° РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚" });
+                return ServiceResult.BadRequest(new { message = "Указанный тип узла не существует" });
             }
 
             node.Title = updateNodeDto.Title;
@@ -147,7 +147,7 @@ namespace KnowledgeMap.Backend.Services
                 await SyncNodeFieldValuesAsync(node, updateNodeDto.CustomFields ?? new Dictionary<string, object>());
             }
 
-            return ServiceResult.Success(new { message = "РЈР·РµР» СѓСЃРїРµС€РЅРѕ РѕР±РЅРѕРІР»С‘РЅ" });
+            return ServiceResult.Success(new { message = "Узел успешно обновлён" });
         }
 
         public async Task<ServiceResult> UpdateNodePositionAsync(int nodeId, int userId, UpdateNodePositionDto positionDto)
@@ -155,7 +155,7 @@ namespace KnowledgeMap.Backend.Services
             var node = await _repository.GetNodeWithMapAsync(nodeId);
             if (node == null)
             {
-                return ServiceResult.NotFound(new { message = "РЈР·РµР» РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Узел не найден" });
             }
 
             if (node.Map.OwnerId != userId)
@@ -171,7 +171,7 @@ namespace KnowledgeMap.Backend.Services
 
             await _repository.SaveChangesAsync();
 
-            return ServiceResult.Success(new { message = "РџРѕР·РёС†РёСЏ СѓР·Р»Р° РѕР±РЅРѕРІР»РµРЅР°" });
+            return ServiceResult.Success(new { message = "Позиция узла обновлена" });
         }
 
         public async Task<ServiceResult> DeleteNodeAsync(int nodeId, int userId)
@@ -179,7 +179,7 @@ namespace KnowledgeMap.Backend.Services
             var node = await _repository.GetNodeWithMapAsync(nodeId);
             if (node == null)
             {
-                return ServiceResult.NotFound(new { message = "РЈР·РµР» РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Узел не найден" });
             }
 
             if (node.Map.OwnerId != userId)
@@ -193,7 +193,7 @@ namespace KnowledgeMap.Backend.Services
             _repository.RemoveNode(node);
             await _repository.SaveChangesAsync();
 
-            return ServiceResult.Success(new { message = "РЈР·РµР» Рё СЃРІСЏР·Р°РЅРЅС‹Рµ СЃ РЅРёРј СЃРІСЏР·Рё СѓРґР°Р»РµРЅС‹" });
+            return ServiceResult.Success(new { message = "Узел и связанные с ним связи удалены" });
         }
 
         public async Task<ServiceResult> GetNodeTypeInfoAsync(int nodeId, int userId)
@@ -201,7 +201,7 @@ namespace KnowledgeMap.Backend.Services
             var node = await _repository.GetNodeWithTypeInfoAsync(nodeId);
             if (node == null)
             {
-                return ServiceResult.NotFound(new { message = "РЈР·РµР» РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Узел не найден" });
             }
 
             var hasAccess = await _repository.HasAccessToMapAsync(node.MapId, userId);

@@ -53,7 +53,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapDetailsAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (!await _repository.HasAccessToMapAsync(mapId, userId))
@@ -151,7 +151,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (map.OwnerId != userId)
@@ -181,7 +181,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (map.OwnerId != userId)
@@ -194,7 +194,7 @@ namespace KnowledgeMap.Backend.Services
             _repository.RemoveMap(map);
             await _repository.SaveChangesAsync();
 
-            return ServiceResult.Success(new { message = "РљР°СЂС‚Р° СѓСЃРїРµС€РЅРѕ СѓРґР°Р»РµРЅР°" });
+            return ServiceResult.Success(new { message = "Карта успешно удалена" });
         }
 
         public async Task<ServiceResult> GetMapNodesAsync(int mapId, int userId)
@@ -264,7 +264,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapDetailsAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             var edges = await _repository.GetEdgesForMapAsync(mapId);

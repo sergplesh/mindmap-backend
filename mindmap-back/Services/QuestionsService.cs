@@ -30,7 +30,7 @@ namespace KnowledgeMap.Backend.Services
             var node = await _repository.GetNodeWithMapAsync(nodeId);
             if (node == null)
             {
-                return ServiceResult.NotFound(new { message = "Р Р€Р В·Р ВµР В» Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…" });
+                return ServiceResult.NotFound(new { message = "Узел не найден" });
             }
 
             if (!await _repository.HasAccessToMapAsync(node.MapId, userId))
@@ -73,7 +73,7 @@ namespace KnowledgeMap.Backend.Services
             var node = await _repository.GetNodeForVerificationAsync(nodeId);
             if (node == null)
             {
-                return ServiceResult.NotFound(new { message = "Р Р€Р В·Р ВµР В» Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…" });
+                return ServiceResult.NotFound(new { message = "Узел не найден" });
             }
 
             if (!await _repository.HasAccessToMapAsync(node.MapId, userId))
@@ -103,7 +103,7 @@ namespace KnowledgeMap.Backend.Services
             var node = await _repository.GetNodeWithMapAsync(dto.NodeId);
             if (node == null)
             {
-                return ServiceResult.NotFound(new { message = "Р Р€Р В·Р ВµР В» Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…" });
+                return ServiceResult.NotFound(new { message = "Узел не найден" });
             }
 
             if (node.Map.OwnerId != userId)
@@ -145,7 +145,7 @@ namespace KnowledgeMap.Backend.Services
             var question = await _repository.GetQuestionForUpdateAsync(questionId);
             if (question == null)
             {
-                return ServiceResult.NotFound(new { message = "Р вЂ™Р С•Р С—РЎР‚Р С•РЎРѓ Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…" });
+                return ServiceResult.NotFound(new { message = "Вопрос не найден" });
             }
 
             if (question.Node.Map.OwnerId != userId)
@@ -182,7 +182,7 @@ namespace KnowledgeMap.Backend.Services
                     {
                         return ServiceResult.BadRequest(new
                         {
-                            message = "Р СњР ВµР В»РЎРЉР В·РЎРЏ РЎС“Р Т‘Р В°Р В»Р С‘РЎвЂљРЎРЉ Р Р†Р В°РЎР‚Р С‘Р В°Р Р…РЎвЂљ Р С•РЎвЂљР Р†Р ВµРЎвЂљР В°, Р С—Р С• Р С”Р С•РЎвЂљР С•РЎР‚Р С•Р СРЎС“ РЎС“Р В¶Р Вµ Р ВµРЎРѓРЎвЂљРЎРЉ Р С‘РЎРѓРЎвЂљР С•РЎР‚Р С‘РЎРЏ Р С—РЎР‚Р С•РЎвЂ¦Р С•Р В¶Р Т‘Р ВµР Р…Р С‘РЎРЏ. Р ВР В·Р СР ВµР Р…Р С‘РЎвЂљР Вµ Р ВµР С–Р С• РЎвЂљР ВµР С”РЎРѓРЎвЂљ Р С‘Р В»Р С‘ Р С•РЎРѓРЎвЂљР В°Р Р†РЎРЉРЎвЂљР Вµ Р Р†Р В°РЎР‚Р С‘Р В°Р Р…РЎвЂљ."
+                            message = "Нельзя удалить вариант ответа, по которому уже есть история прохождения. Измените его текст или оставьте вариант."
                         });
                     }
 
@@ -198,7 +198,7 @@ namespace KnowledgeMap.Backend.Services
 
                         if (existingOption == null)
                         {
-                            return ServiceResult.BadRequest(new { message = "Р СњР ВµР С”Р С•РЎР‚РЎР‚Р ВµР С”РЎвЂљР Р…РЎвЂ№Р в„– Р Р†Р В°РЎР‚Р С‘Р В°Р Р…РЎвЂљ Р С•РЎвЂљР Р†Р ВµРЎвЂљР В°." });
+                            return ServiceResult.BadRequest(new { message = "Некорректный вариант ответа." });
                         }
 
                         existingOption.OptionText = optionDto.OptionText.Trim();
@@ -217,7 +217,7 @@ namespace KnowledgeMap.Backend.Services
 
             await _repository.SaveChangesAsync();
 
-            return ServiceResult.Success(new { message = "Р вЂ™Р С•Р С—РЎР‚Р С•РЎРѓ Р С•Р В±Р Р…Р С•Р Р†Р В»РЎвЂР Р…" });
+            return ServiceResult.Success(new { message = "Вопрос обновлён" });
         }
 
         public async Task<ServiceResult> DeleteQuestionAsync(int questionId, int userId)
@@ -225,7 +225,7 @@ namespace KnowledgeMap.Backend.Services
             var question = await _repository.GetQuestionWithMapAsync(questionId);
             if (question == null)
             {
-                return ServiceResult.NotFound(new { message = "Р вЂ™Р С•Р С—РЎР‚Р С•РЎРѓ Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…" });
+                return ServiceResult.NotFound(new { message = "Вопрос не найден" });
             }
 
             if (question.Node.Map.OwnerId != userId)
@@ -236,7 +236,7 @@ namespace KnowledgeMap.Backend.Services
             _repository.RemoveQuestion(question);
             await _repository.SaveChangesAsync();
 
-            return ServiceResult.Success(new { message = "Р вЂ™Р С•Р С—РЎР‚Р С•РЎРѓ РЎС“Р Т‘Р В°Р В»РЎвЂР Р…" });
+            return ServiceResult.Success(new { message = "Вопрос удалён" });
         }
 
         public async Task<ServiceResult> VerifyAnswersAsync(int userId, VerifyAnswersDto dto)
@@ -244,7 +244,7 @@ namespace KnowledgeMap.Backend.Services
             var node = await _repository.GetNodeForVerificationAsync(dto.NodeId);
             if (node == null)
             {
-                return ServiceResult.NotFound(new { message = "Р Р€Р В·Р ВµР В» Р Р…Р Вµ Р Р…Р В°Р в„–Р Т‘Р ВµР Р…" });
+                return ServiceResult.NotFound(new { message = "Узел не найден" });
             }
 
             if (!await _repository.HasAccessToMapAsync(node.MapId, userId))
@@ -264,7 +264,7 @@ namespace KnowledgeMap.Backend.Services
             {
                 return ServiceResult.Success(new
                 {
-                    message = "Р вЂ™Р В»Р В°Р Т‘Р ВµР В»Р ВµРЎвЂ  Р С”Р В°РЎР‚РЎвЂљРЎвЂ№ Р С‘Р СР ВµР ВµРЎвЂљ Р Т‘Р С•РЎРѓРЎвЂљРЎС“Р С— Р С”Р С• Р Р†РЎРѓР ВµР С РЎС“Р В·Р В»Р В°Р С",
+                    message = "Владелец карты имеет доступ ко всем узлам",
                     isPassed = true,
                     results = new List<object>()
                 });
@@ -305,7 +305,7 @@ namespace KnowledgeMap.Backend.Services
             {
                 return ServiceResult.Success(new
                 {
-                    message = "Р вЂ™РЎРѓР Вµ Р С•РЎвЂљР Р†Р ВµРЎвЂљРЎвЂ№ Р С—РЎР‚Р В°Р Р†Р С‘Р В»РЎРЉР Р…РЎвЂ№Р Вµ! Р Р€Р В·Р ВµР В» Р С•РЎвЂљР С”РЎР‚РЎвЂ№РЎвЂљ.",
+                    message = "Все ответы правильные! Узел открыт.",
                     isPassed = true,
                     results = responseResults,
                     latestAttempt = latestAttemptResponse
@@ -314,7 +314,7 @@ namespace KnowledgeMap.Backend.Services
 
             return ServiceResult.Success(new
             {
-                message = "Р вЂўРЎРѓРЎвЂљРЎРЉ Р Р…Р ВµР С—РЎР‚Р В°Р Р†Р С‘Р В»РЎРЉР Р…РЎвЂ№Р Вµ Р С•РЎвЂљР Р†Р ВµРЎвЂљРЎвЂ№. Р СџР С•Р С—РЎР‚Р С•Р В±РЎС“Р в„–РЎвЂљР Вµ РЎРѓР Р…Р С•Р Р†Р В°.",
+                message = "Есть неправильные ответы. Попробуйте снова.",
                 isPassed = false,
                 results = responseResults,
                 latestAttempt = latestAttemptResponse

@@ -32,7 +32,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (!await _repository.HasMapAccessAsync(mapId, currentUserId))
@@ -55,7 +55,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (!await _repository.HasMapAccessAsync(mapId, currentUserId))
@@ -66,7 +66,7 @@ namespace KnowledgeMap.Backend.Services
             var customType = await _repository.GetCustomNodeTypeAsync(mapId, typeId);
             if (customType == null)
             {
-                return ServiceResult.NotFound(new { message = "РўРёРї РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Тип не найден" });
             }
 
             return ServiceResult.Success(ToNodeTypeResponse(customType));
@@ -77,7 +77,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (!await _repository.HasMapAccessAsync(mapId, currentUserId))
@@ -100,7 +100,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (!await _repository.HasMapAccessAsync(mapId, currentUserId))
@@ -111,7 +111,7 @@ namespace KnowledgeMap.Backend.Services
             var customType = await _repository.GetCustomEdgeTypeAsync(mapId, typeId);
             if (customType == null)
             {
-                return ServiceResult.NotFound(new { message = "РўРёРї РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Тип не найден" });
             }
 
             return ServiceResult.Success(ToEdgeTypeResponse(customType));
@@ -122,7 +122,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (map.OwnerId != currentUserId)
@@ -153,7 +153,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (map.OwnerId != currentUserId)
@@ -181,7 +181,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (map.OwnerId != currentUserId)
@@ -192,7 +192,7 @@ namespace KnowledgeMap.Backend.Services
             var customType = await _repository.GetCustomNodeTypeAsync(mapId, typeId);
             if (customType == null)
             {
-                return ServiceResult.NotFound(new { message = "РўРёРї РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Тип не найден" });
             }
 
             customType.Name = dto.Name;
@@ -212,7 +212,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (map.OwnerId != currentUserId)
@@ -223,7 +223,7 @@ namespace KnowledgeMap.Backend.Services
             var customType = await _repository.GetCustomEdgeTypeAsync(mapId, typeId);
             if (customType == null)
             {
-                return ServiceResult.NotFound(new { message = "РўРёРї РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Тип не найден" });
             }
 
             customType.Name = dto.Name;
@@ -241,7 +241,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (map.OwnerId != currentUserId)
@@ -252,12 +252,12 @@ namespace KnowledgeMap.Backend.Services
             var customType = await _repository.GetCustomNodeTypeAsync(mapId, typeId);
             if (customType == null)
             {
-                return ServiceResult.NotFound(new { message = "РўРёРї РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Тип не найден" });
             }
 
             if (await _repository.IsNodeTypeUsedAsync(typeId))
             {
-                return ServiceResult.BadRequest(new { message = "РќРµР»СЊР·СЏ СѓРґР°Р»РёС‚СЊ С‚РёРї, РєРѕС‚РѕСЂС‹Р№ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ СѓР·Р»Р°РјРё" });
+                return ServiceResult.BadRequest(new { message = "Нельзя удалить тип, который используется узлами" });
             }
 
             var definitionIds = customType.FieldDefinitions.Select(f => f.Id).ToList();
@@ -272,7 +272,7 @@ namespace KnowledgeMap.Backend.Services
             _repository.RemoveNodeType(customType);
             await _repository.SaveChangesAsync();
 
-            return ServiceResult.Success(new { message = "РўРёРї СѓРґР°Р»С‘РЅ" });
+            return ServiceResult.Success(new { message = "Тип удалён" });
         }
 
         public async Task<ServiceResult> DeleteCustomEdgeTypeAsync(int mapId, int typeId, int currentUserId)
@@ -280,7 +280,7 @@ namespace KnowledgeMap.Backend.Services
             var map = await _repository.GetMapByIdAsync(mapId);
             if (map == null)
             {
-                return ServiceResult.NotFound(new { message = "РљР°СЂС‚Р° РЅРµ РЅР°Р№РґРµРЅР°" });
+                return ServiceResult.NotFound(new { message = "Карта не найдена" });
             }
 
             if (map.OwnerId != currentUserId)
@@ -291,18 +291,18 @@ namespace KnowledgeMap.Backend.Services
             var customType = await _repository.GetCustomEdgeTypeAsync(mapId, typeId);
             if (customType == null)
             {
-                return ServiceResult.NotFound(new { message = "РўРёРї РЅРµ РЅР°Р№РґРµРЅ" });
+                return ServiceResult.NotFound(new { message = "Тип не найден" });
             }
 
             if (await _repository.IsEdgeTypeUsedAsync(typeId))
             {
-                return ServiceResult.BadRequest(new { message = "РќРµР»СЊР·СЏ СѓРґР°Р»РёС‚СЊ С‚РёРї, РєРѕС‚РѕСЂС‹Р№ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ СЃРІСЏР·СЏРјРё" });
+                return ServiceResult.BadRequest(new { message = "Нельзя удалить тип, который используется связями" });
             }
 
             _repository.RemoveEdgeType(customType);
             await _repository.SaveChangesAsync();
 
-            return ServiceResult.Success(new { message = "РўРёРї СѓРґР°Р»С‘РЅ" });
+            return ServiceResult.Success(new { message = "Тип удалён" });
         }
 
         private async Task ReplaceNodeTypeFieldDefinitionsAsync(NodeType nodeType, List<CustomFieldDto>? fields)
