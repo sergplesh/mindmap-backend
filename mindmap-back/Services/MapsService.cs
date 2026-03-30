@@ -99,6 +99,7 @@ namespace KnowledgeMap.Backend.Services
                     TypeStyle = e.Type?.Style ?? "solid",
                     TypeLabel = e.Type?.Label ?? string.Empty,
                     TypeColor = e.Type?.Color ?? "#666666",
+                    TypeIsBidirectional = e.Type?.IsBidirectional ?? false,
                     IsCustomType = e.Type?.IsSystem == false,
                     CustomTypeId = TypeScopeMapper.GetCustomEdgeTypeId(e.Type),
                     e.IsHierarchy
@@ -246,6 +247,7 @@ namespace KnowledgeMap.Backend.Services
                 TypeStyle = e.Type != null ? e.Type.Style : "solid",
                 TypeLabel = e.Type != null ? e.Type.Label : string.Empty,
                 TypeColor = e.Type != null ? e.Type.Color : "#666666",
+                TypeIsBidirectional = e.Type?.IsBidirectional ?? false,
                 IsCustomType = e.Type != null && !e.Type.IsSystem,
                 e.IsHierarchy,
                 e.CreatedAt
@@ -343,6 +345,7 @@ namespace KnowledgeMap.Backend.Services
                             e.Type.Style,
                             e.Type.Label,
                             e.Type.Color,
+                            e.Type.IsBidirectional,
                             IsCustom = !e.Type.IsSystem
                         } : null,
                         e.IsHierarchy,

@@ -31,6 +31,9 @@ namespace KnowledgeMap.Backend.Models
         [Required]
         public bool IsSystem { get; set; }
 
+        [Required]
+        public bool IsBidirectional { get; set; } = false;
+
         public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
     }
 }

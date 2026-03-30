@@ -85,12 +85,11 @@ namespace KnowledgeMap.Backend.Services
                 return ServiceResult.Forbidden();
             }
 
-            var systemTypes = await _repository.GetSystemEdgeTypesAsync();
             var customTypes = await _repository.GetCustomEdgeTypesAsync(mapId);
 
             return ServiceResult.Success(new
             {
-                system = systemTypes.Select(ToEdgeTypeResponse),
+                system = Array.Empty<object>(),
                 custom = customTypes.Select(ToEdgeTypeResponse)
             });
         }
@@ -168,6 +167,7 @@ namespace KnowledgeMap.Backend.Services
                 Style = dto.Style,
                 Label = dto.Label,
                 Color = dto.Color,
+                IsBidirectional = dto.IsBidirectional,
                 IsSystem = false
             };
 
@@ -230,6 +230,7 @@ namespace KnowledgeMap.Backend.Services
             customType.Style = dto.Style;
             customType.Label = dto.Label;
             customType.Color = dto.Color;
+            customType.IsBidirectional = dto.IsBidirectional;
 
             await _repository.SaveChangesAsync();
 
@@ -390,6 +391,7 @@ namespace KnowledgeMap.Backend.Services
                 type.Style,
                 type.Label,
                 type.Color,
+                type.IsBidirectional,
                 type.IsSystem
             };
         }

@@ -173,6 +173,7 @@ namespace KnowledgeMap.Backend.Services
                 TypeStyle = edge.Type?.Style ?? "solid",
                 TypeLabel = edge.Type?.Label ?? string.Empty,
                 TypeColor = edge.Type?.Color ?? "#666666",
+                TypeIsBidirectional = edge.Type?.IsBidirectional ?? false,
                 edge.IsHierarchy,
                 edge.CreatedAt
             };

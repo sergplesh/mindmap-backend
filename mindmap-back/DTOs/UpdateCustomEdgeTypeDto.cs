@@ -17,5 +17,7 @@ namespace KnowledgeMap.Backend.DTOs
 
         [MaxLength(20)]
         public string Color { get; set; } = "#666666";
+
+        public bool IsBidirectional { get; set; } = false;
     }
 }

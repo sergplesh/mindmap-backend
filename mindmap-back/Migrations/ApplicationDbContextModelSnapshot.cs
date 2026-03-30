@@ -108,6 +108,75 @@ namespace mindmap_back.Migrations
                     b.ToTable("AnswerResults");
                 });
 
+            modelBuilder.Entity("KnowledgeMap.Backend.Models.AnswerResultQuestion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AnswerResultId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("QuestionText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("QuestionType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnswerResultId", "DisplayOrder")
+                        .IsUnique();
+
+                    b.ToTable("AnswerResultQuestions");
+                });
+
+            modelBuilder.Entity("KnowledgeMap.Backend.Models.AnswerResultQuestionOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AnswerOptionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AnswerResultQuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSelected")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OptionText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnswerResultQuestionId", "DisplayOrder")
+                        .IsUnique();
+
+                    b.ToTable("AnswerResultQuestionOptions");
+                });
+
             modelBuilder.Entity("KnowledgeMap.Backend.Models.AnswerResultSelection", b =>
                 {
                     b.Property<int>("Id")
@@ -187,6 +256,9 @@ namespace mindmap_back.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<bool>("IsBidirectional")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsSystem")
                         .HasColumnType("bit");
 
@@ -227,6 +299,7 @@ namespace mindmap_back.Migrations
                         {
                             Id = 1,
                             Color = "#666666",
+                            IsBidirectional = false,
                             IsSystem = true,
                             Label = "является",
                             Name = "is_a",
@@ -236,6 +309,7 @@ namespace mindmap_back.Migrations
                         {
                             Id = 2,
                             Color = "#666666",
+                            IsBidirectional = false,
                             IsSystem = true,
                             Label = "использует",
                             Name = "uses",
@@ -245,6 +319,7 @@ namespace mindmap_back.Migrations
                         {
                             Id = 3,
                             Color = "#666666",
+                            IsBidirectional = false,
                             IsSystem = true,
                             Label = "требует",
                             Name = "requires",
@@ -254,6 +329,7 @@ namespace mindmap_back.Migrations
                         {
                             Id = 4,
                             Color = "#666666",
+                            IsBidirectional = false,
                             IsSystem = true,
                             Label = "отличие",
                             Name = "contrasts",
@@ -263,6 +339,7 @@ namespace mindmap_back.Migrations
                         {
                             Id = 5,
                             Color = "#666666",
+                            IsBidirectional = false,
                             IsSystem = true,
                             Label = "доказывает",
                             Name = "proves",
@@ -711,6 +788,28 @@ namespace mindmap_back.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("KnowledgeMap.Backend.Models.AnswerResultQuestion", b =>
+                {
+                    b.HasOne("KnowledgeMap.Backend.Models.AnswerResult", "AnswerResult")
+                        .WithMany("Questions")
+                        .HasForeignKey("AnswerResultId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AnswerResult");
+                });
+
+            modelBuilder.Entity("KnowledgeMap.Backend.Models.AnswerResultQuestionOption", b =>
+                {
+                    b.HasOne("KnowledgeMap.Backend.Models.AnswerResultQuestion", "Question")
+                        .WithMany("Options")
+                        .HasForeignKey("AnswerResultQuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+                });
+
             modelBuilder.Entity("KnowledgeMap.Backend.Models.AnswerResultSelection", b =>
                 {
                     b.HasOne("KnowledgeMap.Backend.Models.AnswerOption", "AnswerOption")
@@ -878,7 +977,14 @@ namespace mindmap_back.Migrations
 
             modelBuilder.Entity("KnowledgeMap.Backend.Models.AnswerResult", b =>
                 {
+                    b.Navigation("Questions");
+
                     b.Navigation("Selections");
+                });
+
+            modelBuilder.Entity("KnowledgeMap.Backend.Models.AnswerResultQuestion", b =>
+                {
+                    b.Navigation("Options");
                 });
 
             modelBuilder.Entity("KnowledgeMap.Backend.Models.EdgeType", b =>
